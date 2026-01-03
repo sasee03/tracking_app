@@ -33,7 +33,11 @@ export const habitAPI = {
   saveHabits: (year, month, habits) => 
     api.post(`/habits/${year}/${month}`, { habits }),
   getYearlyReport: (year) => 
-    api.get(`/habits/report/${year}`)
+    api.get(`/habits/report/${year}`),
+  getSleepData: (year, month) => 
+    api.get(`/habits/sleep/${year}/${month}`),
+  saveSleepData: (year, month, sleepData) => 
+    api.post(`/habits/sleep/${year}/${month}`, { sleepData })
 };
 
 export default api;

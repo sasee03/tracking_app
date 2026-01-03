@@ -232,25 +232,18 @@ function App() {
     if (!user) return;
 
     try {
-      const sleepKey = `sleep:${user.username}:${currentYear}-${currentMonth}`;
-      const result = await window.storage?.get?.(sleepKey);
-      if (result && result.value) {
-        setSleepData(JSON.parse(result.value));
-      } else {
-        setSleepData({});
-      }
+      const response = await habitAPI.getSleepData(currentYear, currentMonth);
+      setSleepData(response.data || {});
     } catch (error) {
       console.error('Failed to load sleep data:', error);
       setSleepData({});
     }
   };
-
   const saveSleepData = async (updatedSleepData) => {
     if (!user) return;
 
     try {
-      const sleepKey = `sleep:${user.username}:${currentYear}-${currentMonth}`;
-      await window.storage?.set?.(sleepKey, JSON.stringify(updatedSleepData));
+      await habitAPI.saveSleepData(currentYear, currentMonth, updatedSleepData);
     } catch (error) {
       console.error('Failed to save sleep data:', error);
     }

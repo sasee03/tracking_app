@@ -63,5 +63,56 @@ router.get('/report/:year', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+// Get sleep data for a specific month
+router.get('/sleep/:year/:month', auth, async (req, res) => {
+  try {
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+    
+    const sleepData = await Habit.findOne({
+      userId: req.user.id,
+      year,
+      month,
+      name: '__SLEEP_DATA__'
+    });
+    
+    res.json(sleepData ? sleepData.completions : {});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Save sleep data for a month
+router.post('/sleep/:year/:month', auth, async (req, res) => {
+  try {
+    const { sleepData } = req.body;
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month);
+
+    // Delete existing sleep data for this month
+    await Habit.deleteOne({
+      userId: req.user.id,
+      year,
+      month,
+      name: '__SLEEP_DATA__'
+    });
+
+    // Create new sleep data entry
+    const sleepDoc = new Habit({
+      userId: req.user.id,
+      name: '__SLEEP_DATA__',
+      year,
+      month,
+      completions: sleepData
+    });
+
+    await sleepDoc.save();
+    res.json(sleepDoc);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 module.exports = router;
