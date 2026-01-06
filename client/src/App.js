@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Check, LogOut, Calendar, Award } from 'lucide-react';
+import { Plus, Trash2, Check, LogOut, Calendar, Award, BookOpen, X } from 'lucide-react';
 import { authAPI, habitAPI } from './utils/api';
 import './App.css';
 
@@ -15,6 +15,7 @@ function App() {
   const [error, setError] = useState('');
   const [showAddHabitModal, setShowAddHabitModal] = useState(false);
   const [sleepData, setSleepData] = useState({});
+  const [showInspiration, setShowInspiration] = useState(false);
 
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
@@ -232,18 +233,25 @@ function App() {
     if (!user) return;
 
     try {
-      const response = await habitAPI.getSleepData(currentYear, currentMonth);
-      setSleepData(response.data || {});
+      const sleepKey = `sleep:${user.username}:${currentYear}-${currentMonth}`;
+      const result = await window.storage?.get?.(sleepKey);
+      if (result && result.value) {
+        setSleepData(JSON.parse(result.value));
+      } else {
+        setSleepData({});
+      }
     } catch (error) {
       console.error('Failed to load sleep data:', error);
       setSleepData({});
     }
   };
+
   const saveSleepData = async (updatedSleepData) => {
     if (!user) return;
 
     try {
-      await habitAPI.saveSleepData(currentYear, currentMonth, updatedSleepData);
+      const sleepKey = `sleep:${user.username}:${currentYear}-${currentMonth}`;
+      await window.storage?.set?.(sleepKey, JSON.stringify(updatedSleepData));
     } catch (error) {
       console.error('Failed to save sleep data:', error);
     }
@@ -362,6 +370,104 @@ function App() {
                   {day}
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const InspirationModal = () => {
+    const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const today = new Date().getDate();
+    const isCurrentMonth = new Date().getMonth() === currentMonth - 1 && new Date().getFullYear() === currentYear;
+
+    const calendarDays = [];
+    // Empty cells for days before month starts
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      calendarDays.push(null);
+    }
+    // Actual days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      calendarDays.push(day);
+    }
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 rounded-t-lg">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <BookOpen size={28} />
+                <h2 className="text-2xl font-bold">Daily Reflection</h2>
+              </div>
+              <button
+                onClick={() => setShowInspiration(false)}
+                className="hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Inspirational Quote */}
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-lg border-l-4 border-purple-500">
+              <p className="text-gray-800 leading-relaxed text-lg italic mb-4">
+                "We may have the will, but that comes with the responsibility to introspect and understand what drives our will. Is it a desire that traps us in a pattern of destructive behaviour—to hurt ourselves, or perhaps to hurt someone else, maybe even the ones we love most?"
+              </p>
+              <p className="text-gray-800 leading-relaxed text-lg italic mb-4">
+                "These questions can be dark, but the ending is ultimately a hopeful one. It suggests that we can let go of the desires that drive us. It tells us that even if we are trapped, we can still find Ariadne's red thread to lead us out of the labyrinth."
+              </p>
+              <p className="text-gray-600 text-sm mt-4 text-right">— On Will and Responsibility</p>
+            </div>
+
+            {/* Calendar */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">{monthName}</h3>
+              
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="text-center text-sm font-semibold text-gray-600 py-2">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar days */}
+              <div className="grid grid-cols-7 gap-2">
+                {calendarDays.map((day, idx) => (
+                  <div
+                    key={idx}
+                    className={`
+                      aspect-square flex items-center justify-center rounded-lg text-sm font-medium
+                      ${day === null ? 'bg-transparent' : 'bg-gray-50 hover:bg-gray-100'}
+                      ${isCurrentMonth && day === today ? 'bg-purple-500 text-white hover:bg-purple-600' : 'text-gray-700'}
+                      ${day !== null ? 'cursor-pointer transition-colors' : ''}
+                    `}
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Legend */}
+              {isCurrentMonth && (
+                <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-600">
+                  <div className="w-4 h-4 bg-purple-500 rounded"></div>
+                  <span>Today</span>
+                </div>
+              )}
+            </div>
+
+            {/* Motivational Message */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+              <p className="text-green-800 text-center font-medium">
+                🌱 Every day is a new opportunity to build better habits and become the person you want to be.
+              </p>
             </div>
           </div>
         </div>
@@ -595,6 +701,13 @@ function App() {
               Yearly Report
             </button>
             <button
+              onClick={() => setShowInspiration(true)}
+              className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+              title="Daily Inspiration"
+            >
+              <BookOpen size={20} />
+            </button>
+            <button
               onClick={() => setShowAddHabitModal(true)}
               className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
               title="Add New Habit"
@@ -613,6 +726,7 @@ function App() {
 
         {view === 'monthly-report' && <MonthlyReport />}
         {view === 'yearly-report' && <YearlyReport />}
+        {showInspiration && <InspirationModal />}
 
         {view === 'tracker' && (
           <>
