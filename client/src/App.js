@@ -394,6 +394,26 @@ function App() {
       calendarDays.push(day);
     }
 
+    // Calculate progress for each day
+    const getDayProgress = (day) => {
+      if (!day || habits.length === 0) return 0;
+      
+      const totalHabits = habits.length;
+      const completedHabits = habits.filter(habit => habit.completions[day]).length;
+      
+      return (completedHabits / totalHabits) * 100;
+    };
+
+    // Get gradient color based on progress
+    const getProgressGradient = (progress) => {
+      if (progress === 0) return 'bg-gray-100';
+      if (progress < 25) return 'bg-gradient-to-br from-red-100 to-red-200';
+      if (progress < 50) return 'bg-gradient-to-br from-orange-100 to-orange-200';
+      if (progress < 75) return 'bg-gradient-to-br from-yellow-100 to-yellow-200';
+      if (progress < 100) return 'bg-gradient-to-br from-lime-100 to-lime-200';
+      return 'bg-gradient-to-br from-green-400 to-emerald-500';
+    };
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -425,42 +445,80 @@ function App() {
             </div>
 
             {/* Calendar */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
               <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">{monthName}</h3>
               
               {/* Weekday headers */}
-              <div className="grid grid-cols-7 gap-2 mb-2">
+              <div className="grid grid-cols-7 gap-1.5 mb-2">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-center text-sm font-semibold text-gray-600 py-2">
+                  <div key={day} className="text-center text-xs font-semibold text-gray-600 py-1">
                     {day}
                   </div>
                 ))}
               </div>
 
               {/* Calendar days */}
-              <div className="grid grid-cols-7 gap-2">
-                {calendarDays.map((day, idx) => (
-                  <div
-                    key={idx}
-                    className={`
-                      aspect-square flex items-center justify-center rounded-lg text-sm font-medium
-                      ${day === null ? 'bg-transparent' : 'bg-gray-50 hover:bg-gray-100'}
-                      ${isCurrentMonth && day === today ? 'bg-purple-500 text-white hover:bg-purple-600' : 'text-gray-700'}
-                      ${day !== null ? 'cursor-pointer transition-colors' : ''}
-                    `}
-                  >
-                    {day}
-                  </div>
-                ))}
+              <div className="grid grid-cols-7 gap-1.5">
+                {calendarDays.map((day, idx) => {
+                  const progress = getDayProgress(day);
+                  const isToday = isCurrentMonth && day === today;
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className={`
+                        relative flex items-center justify-center rounded-md text-xs font-semibold
+                        transition-all hover:scale-105
+                        ${day === null ? 'bg-transparent' : getProgressGradient(progress)}
+                        ${isToday ? 'ring-2 ring-purple-500 ring-offset-1' : ''}
+                        ${progress === 100 ? 'text-white shadow-md' : 'text-gray-700'}
+                        ${day !== null ? 'cursor-pointer' : ''}
+                      `}
+                      style={{ height: '40px', minHeight: '40px' }}
+                      title={day ? `${progress.toFixed(0)}% completed` : ''}
+                    >
+                      {day}
+                      {day && progress > 0 && (
+                        <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Legend */}
-              {isCurrentMonth && (
-                <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-600">
-                  <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                  <span>Today</span>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs text-gray-600">
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 bg-gray-100 rounded border border-gray-300"></div>
+                  <span>0%</span>
                 </div>
-              )}
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 bg-gradient-to-br from-red-100 to-red-200 rounded"></div>
+                  <span>1-25%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 bg-gradient-to-br from-orange-100 to-orange-200 rounded"></div>
+                  <span>25-50%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded"></div>
+                  <span>50-75%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 bg-gradient-to-br from-lime-100 to-lime-200 rounded"></div>
+                  <span>75-99%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded"></div>
+                  <span>100%</span>
+                </div>
+                {isCurrentMonth && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 bg-white rounded ring-2 ring-purple-500"></div>
+                    <span>Today</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Motivational Message */}
